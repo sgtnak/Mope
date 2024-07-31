@@ -38,6 +38,8 @@ class Models():
         
         self.occluder_model = []
         self.faceparser_model = []
+
+        self.swapper_model_initing = False
         
         self.syncvec = torch.empty((1,1), dtype=torch.float32, device='cuda:0')
         
@@ -59,20 +61,20 @@ class Models():
         
         if detect_mode=='Retinaface':
             if not self.retinaface_model:
-                self.retinaface_model = onnxruntime.InferenceSession('.\models\det_10g.onnx', providers=self.providers)
+                self.retinaface_model = onnxruntime.InferenceSession('./models/det_10g.onnx', providers=self.providers)
                 
             kpss = self.detect_retinaface(img, max_num=max_num, score=score)
 
         elif detect_mode=='SCRDF':
             if not self.scrdf_model:
-                self.scrdf_model = onnxruntime.InferenceSession('.\models\scrfd_2.5g_bnkps.onnx', providers=self.providers)
+                self.scrdf_model = onnxruntime.InferenceSession('./models/scrfd_2.5g_bnkps.onnx', providers=self.providers)
                 
             kpss = self.detect_scrdf(img, max_num=max_num, score=score)
             
         
         elif detect_mode=='Yolov8':
             if not self.yoloface_model:
-                self.yoloface_model = onnxruntime.InferenceSession('.\models\yoloface_8n.onnx', providers=self.providers)
+                self.yoloface_model = onnxruntime.InferenceSession('./models/yoloface_8n.onnx', providers=self.providers)
                 self.insight106_model = onnxruntime.InferenceSession('./models/2d106det.onnx', providers=self.providers)
             # kpss = self.detect_yoloface2(img, max_num=max_num, score=score)
             kpss = self.detect_retinaface(img, max_num=max_num, score=score)
@@ -102,10 +104,26 @@ class Models():
         self.codeformer_model = []
         self.occluder_model = []
         self.faceparser_model = []
-            
+
+        self.swapper_model_initing = False
+    
+    def load_models(self):        
+        if not self.GFPGAN_model:
+            print("load GFPGAN...")
+            self.GFPGAN_model = onnxruntime.InferenceSession( "./models/GFPGANv1.3.onnx", providers=self.providers)
+        
+        if not self.occluder_model:
+            print("load Occluder...")
+            self.occluder_model = onnxruntime.InferenceSession("./models/occluder.onnx", providers=self.providers)
+        
+        if not self.faceparser_model:
+            print("load Face Parser...")
+            self.faceparser_model = onnxruntime.InferenceSession("./models/faceparser_fp16.onnx", providers=self.providers)
+
+
     def run_recognize(self, img, kps):
         if not self.recognition_model:
-            self.recognition_model = onnxruntime.InferenceSession('.\models\w600k_r50.onnx', providers=self.providers)
+            self.recognition_model = onnxruntime.InferenceSession('./models/w600k_r50.onnx', providers=self.providers)
         
         embedding, cropped_image = self.recognize(img, kps)
         return embedding, cropped_image
@@ -124,13 +142,20 @@ class Models():
         
     def run_swapper(self, image, embedding, output):
         if not self.swapper_model:
-            cuda_options = {"arena_extend_strategy": "kSameAsRequested", 'cudnn_conv_algo_search': 'DEFAULT'}
-            sess_options = onnxruntime.SessionOptions()
-            sess_options.enable_cpu_mem_arena = False
-            
-            # self.swapper_model = onnxruntime.InferenceSession( "./models/inswapper_128_last_cubic.onnx", sess_options, providers=[('CUDAExecutionProvider', cuda_options), 'CPUExecutionProvider'])
-            
-            self.swapper_model = onnxruntime.InferenceSession( "./models/inswapper_128.fp16.onnx", providers=self.providers)
+            if self.swapper_model_initing:
+                # Locked
+                while (self.swapper_model_initing): continue
+            else:
+                self.swapper_model_initing = True
+                cuda_options = {"arena_extend_strategy": "kSameAsRequested", 'cudnn_conv_algo_search': 'DEFAULT'}
+                sess_options = onnxruntime.SessionOptions()
+                sess_options.enable_cpu_mem_arena = False
+
+                self.swapper_model_init = True
+                
+                print("load Swapper...")
+                self.swapper_model = onnxruntime.InferenceSession( "./models/inswapper_128.fp16.onnx", providers=self.providers)
+                self.swapper_model_initing = False
 
         io_binding = self.swapper_model.io_binding()
         io_binding.bind_input(name='target', device_type='cuda', device_id=0, element_type=np.float32, shape=(1,3,128,128), buffer_ptr=image.data_ptr())
@@ -226,8 +251,8 @@ class Models():
             # sess_options.enable_cpu_mem_arena = False
 
             # self.GFPGAN_model = onnxruntime.InferenceSession( "./models/GFPGANv1.4.onnx", sess_options, providers=[("CUDAExecutionProvider", cuda_options), 'CPUExecutionProvider'])
-            
-            self.GFPGAN_model = onnxruntime.InferenceSession( "./models/GFPGANv1.4.onnx", providers=self.providers)
+            print("load GFPGAN...")
+            self.GFPGAN_model = onnxruntime.InferenceSession( "./models/GFPGANv1.3.onnx", providers=self.providers)
 
         io_binding = self.GFPGAN_model.io_binding()
         io_binding.bind_input(name='input', device_type='cuda', device_id=0, element_type=np.float32, shape=(1,3,512,512), buffer_ptr=image.data_ptr())
@@ -274,6 +299,7 @@ class Models():
 
     def run_occluder(self, image, output):    
         if not self.occluder_model:
+            print("load Occluder...")
             self.occluder_model = onnxruntime.InferenceSession("./models/occluder.onnx", providers=self.providers)
 
         io_binding = self.occluder_model.io_binding()            
@@ -287,6 +313,7 @@ class Models():
 
     def run_faceparser(self, image, output):    
         if not self.faceparser_model:
+            print("load Face Parser...")
             self.faceparser_model = onnxruntime.InferenceSession("./models/faceparser_fp16.onnx", providers=self.providers)
 
         io_binding = self.faceparser_model.io_binding()            

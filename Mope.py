@@ -18,10 +18,11 @@ parser.add_argument('-o', '--output', type=str, default="data/output", help="Fol
 parser.add_argument('-p', '--params', type=str, default="saved_parameters.json", help="JSON file to load parameters from")
 parser.add_argument('-b', '--begin_from', type=int, default=0, help="Which frame to start swapping from")
 parser.add_argument('-d', '--device', type=str, default='0', help="Set CUDA visible device")
+parser.add_argument('-l', '--logsave', type=str, default='log-default.txt', help="Log save path")
 
 args = parser.parse_args()
 
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)   # or whatever
 
 if __name__ == "__main__":
-    Mock.run(args.source, args.target, args.output, args.begin_from, args.params)
+    Mock.run(args.source, args.target, args.output, args.begin_from, args.params, args.logsave)

@@ -427,6 +427,7 @@ class VideoManager():
             if index != -1:
 
                 # If the swapper thread has finished generating a frame
+                # print(self.process_qs[index]['Status'], self.process_qs[index]['FrameNumber'])
                 if self.process_qs[index]['Status'] == 'finished':
                     image = self.process_qs[index]['ProcessedFrame']  
                     
@@ -441,7 +442,7 @@ class VideoManager():
                     self.frame_q.append(temp)
 
                     # Close video and process
-                    if self.process_qs[index]['FrameNumber'] >= self.video_frame_total-1 or self.process_qs[index]['FrameNumber'] == self.stop_marker or self.play == False:
+                    if self.process_qs[index]['FrameNumber'] >= self.video_frame_total-2 or self.process_qs[index]['FrameNumber'] == self.stop_marker or self.play == False:
                         self.play_video("stop")
                         stop_time = float(self.capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))
                         if stop_time == 0:

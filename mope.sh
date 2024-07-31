@@ -1,7 +1,6 @@
 #!/bin/bash
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
-
+. activate base
 conda activate Rope
-python Mope.py -s data/faces/qzx2.jpg -t data/videos/zhurui_half1_2min.mp4 -o data/output
+python Mope.py -s data/face/sample.png -t benchmark/target-1080p.mp4 -o data/output -d 0
+

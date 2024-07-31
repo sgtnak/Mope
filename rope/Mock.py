@@ -13,7 +13,7 @@ from rope.FaceHelper import FaceHelper
 
 from rope.Logger import get_logger
 
-logger = get_logger()
+from tqdm import tqdm
 
 resize_delay = 1
 mem_delay = 1
@@ -41,21 +41,22 @@ def step():
     return True, vm.current_frame
     
     
-def run(source_image, target_video, save_path, start_at, params_path):
+def run(source_image, target_video, save_path, start_at, params_path, logger_path="log.txt"):
     global vm, action, frame, r_frame, resize_delay, mem_delay
 
     with open(params_path, 'r') as f:
         parameters = json.load(f)
 
+    logger = get_logger(logger_path)
     logger.info(
         f"Rope configs: \n"
-        f"- Source Image: \033[93m{source_image}\033[0m ;\n"
-        f"- target_video: \033[93m{target_video}\033[0m ;\n"
-        f"- Save Path: \033[93m{save_path}\033[0m ;\n"
-        f"- Begin from frame \033[93m[{start_at}]\033[0m ;\n"
-        f"Loading parameters from \033[93m{params_path}\033[0m, notably:\n" + 
-        (f"- Using \033[93m{parameters['RestorerTypeTextSel']}\033[0m;\n" if parameters['RestorerSwitch'] else "") +
-        f"- Using number of Threads \033[95m<< {parameters['ThreadsSlider']} >>\033[0m.\n" + 
+        f"- Source Image: {source_image};\n"
+        f"- target_video: {target_video} ;\n"
+        f"- Save Path: {save_path} ;\n"
+        f"- Begin from frame [{start_at}] ;\n"
+        f"Loading parameters from {params_path}, notably:\n" + 
+        (f"- Using {parameters['RestorerTypeTextSel']};\n" if parameters['RestorerSwitch'] else "") +
+        f"- Using number of Threads << {parameters['ThreadsSlider']} >>.\n" + 
         f"- (read JSON file for more detail)"
     )
 
@@ -80,30 +81,43 @@ def run(source_image, target_video, save_path, start_at, params_path):
     face_helper = FaceHelper(models, sample_frame, source_image, parameters)
     vm.assign_found_faces(face_helper.target_faces)
 
+    models.load_models()
+
     vm.current_frame = start_at
     vm.play_video("record")
 
     frame = start_at
+    last_frame = 0
     
     interrupts = 0
-    while True:
-        try:
-            flag, frame = step()
-            if not flag:
-                break
-            step()
-            time.sleep(0.1)
-            logger.info(f"Current frame: {frame} / {vm.video_frame_total}", end='\r')
-        except KeyboardInterrupt:
-            vm.play = False
-            logger.warn(f"Attempted to stop recording at {frame} / {vm.video_frame_total}")
-            interrupts += 1
-        if interrupts >= 3:
-            logger.info("Forced exit")
-            vm.play_video("stop")
-            exit()
-        elif interrupts >= 2:
-            logger.warn("Warning: ^C once more will force program to exit.")
+    start_time = time.time()
+    last_output = time.time()
+    with tqdm(total=vm.video_frame_total, ncols=120) as pbar:
+        while True:
+            try:
+                flag, frame = step()
+                if not flag:
+                    break
+                step()
+                time.sleep(0.01)
+                if time.time() - last_output > 1:
+                    # logger.info(f"[{int(time.time() - start_time)}s] Current frame: {frame} / {vm.video_frame_total}")
+                    logger.info(pbar.__str__())
+                    pbar.update(frame - last_frame)
+                    last_frame = frame
+                    last_output = time.time()
+            except KeyboardInterrupt:
+                vm.play = False
+                logger.warn(f"Warning: Attempted to stop recording at {frame} / {vm.video_frame_total}")
+                interrupts += 1
+            
+            if interrupts >= 4:
+                logger.info("Forced exit")
+                vm.play_video("stop")
+                exit()
+            elif interrupts == 2:
+                logger.warn("Warning: ^C once more will force program to exit.")
+                interrupts += 1
     
 
 
