@@ -348,7 +348,7 @@ class VideoManager():
             self.start_time = float(self.capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))            
             
             self.file_name = os.path.splitext(os.path.basename(self.target_video))
-            base_filename =  self.file_name[0]+"_"+str(time.time())[:10]
+            base_filename =  self.file_name[0]+"_"+time.strftime("%m%d-%H%M")     # Changed save format
             self.output = os.path.join(self.saved_video_path, base_filename)
             self.temp_file = self.output+"_temp"+self.file_name[1]  
             
