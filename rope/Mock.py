@@ -101,7 +101,6 @@ def run(source_image, target_video, save_path, start_at, params_path, logger_pat
                 step()
                 time.sleep(0.01)
                 if time.time() - last_output > 1:
-                    # logger.info(f"[{int(time.time() - start_time)}s] Current frame: {frame} / {vm.video_frame_total}")
                     logger.info(pbar.__str__())
                     pbar.update(frame - last_frame)
                     last_frame = frame
