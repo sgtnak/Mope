@@ -118,5 +118,12 @@ def run(source_image, target_video, save_path, start_at, params_path, logger_pat
                 logger.warn("Warning: ^C once more will force program to exit.")
                 interrupts += 1
     
+    logger.info(
+        f"Finished. \n"
+        f"- Source Image: {source_image};\n"
+        f"- target_video: {target_video} ;\n"
+        f"- Save Path: {save_path} .\n"
+    )
+    
 
 

@@ -468,7 +468,7 @@ class VideoManager():
                                 final_file]
                         
                         four = subprocess.run(args)
-                        # os.remove(self.temp_file)
+                        os.remove(self.temp_file)
 
                         timef= time.time() - self.timer 
                         self.record = False
