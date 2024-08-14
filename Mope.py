@@ -5,8 +5,6 @@
 import os
 import argparse
 
-from rope import Mock
-
 parser = argparse.ArgumentParser(
     prog='Rope (No GUI)',
     description='Rope with GUI removed'
@@ -23,6 +21,9 @@ parser.add_argument('-l', '--logsave', type=str, default='log-default.txt', help
 args = parser.parse_args()
 
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.device)   # or whatever
+os.environ["WORLD_SIZE"] = "1"
+
+from rope import Mock
 
 if __name__ == "__main__":
     Mock.run(args.source, args.target, args.output, args.begin_from, args.params, args.logsave)

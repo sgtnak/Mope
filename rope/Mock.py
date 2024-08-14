@@ -76,6 +76,7 @@ def run(source_image, target_video, save_path, start_at, params_path, logger_pat
 
     vm.load_target_video(target_video)
     vm.saved_video_path = save_path
+    vm.saved_video_affix = source_image.split('/')[-1]
 
     sample_frame = vm.get_requested_frame()[0]
     face_helper = FaceHelper(models, sample_frame, source_image, parameters)

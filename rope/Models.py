@@ -11,7 +11,7 @@ import onnxruntime
 import onnx
 from itertools import product as product
 import subprocess as sp
-onnxruntime.set_default_logger_severity(4)
+onnxruntime.set_default_logger_severity(2)
 
 class Models():
     def __init__(self): 

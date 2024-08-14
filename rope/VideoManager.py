@@ -87,6 +87,7 @@ class VideoManager():
         self.image = []
 
         self.saved_video_path = []
+        self.saved_video_affix = ""
         self.sp = []
         self.timer = []
         self.fps_average = []
@@ -348,7 +349,7 @@ class VideoManager():
             self.start_time = float(self.capture.get(cv2.CAP_PROP_POS_FRAMES) / float(self.fps))            
             
             self.file_name = os.path.splitext(os.path.basename(self.target_video))
-            base_filename =  self.file_name[0]+"_"+time.strftime("%m%d-%H%M")     # Changed save format
+            base_filename =  self.file_name[0]+ "+"+self.saved_video_affix+"_"+time.strftime("%m%d-%H%M")     # Changed save format
             self.output = os.path.join(self.saved_video_path, base_filename)
             self.temp_file = self.output+"_temp"+self.file_name[1]  
             
